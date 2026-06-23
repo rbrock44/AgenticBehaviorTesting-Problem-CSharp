@@ -11,18 +11,7 @@
 
 namespace IndustrialLogic;
 
-public class Order
+public interface IPaymentGateway
 {
-    public string OrderId { get; }
-    public string CustomerEmail { get; }
-    public IReadOnlyList<CartItem> Items { get; }
-    public decimal Total { get; }
-
-    public Order(string orderId, string customerEmail, IReadOnlyList<CartItem> items, decimal total)
-    {
-        OrderId = orderId;
-        CustomerEmail = customerEmail;
-        Items = items;
-        Total = total;
-    }
+    string Charge(Customer customer, decimal amount);
 }

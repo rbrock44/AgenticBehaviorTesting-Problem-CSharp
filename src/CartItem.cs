@@ -11,10 +11,4 @@
 
 namespace IndustrialLogic;
 
-public enum Color
-{
-    Red,
-    White,
-    Pink,
-    Yellow
-}
+public record CartItem(string ProductId, string Name, int Quantity, decimal UnitPrice);

@@ -11,18 +11,18 @@
 
 namespace IndustrialLogic;
 
-public class Orders
+public class Cart
 {
-    private readonly List<Order> _orders = new();
+    private readonly List<CartItem> _items = new();
 
-    public void AddOrder(Order order)
+    public void AddItem(string productId, string name, int quantity, decimal unitPrice)
     {
-        _orders.Add(order);
+        _items.Add(new CartItem(productId, name, quantity, unitPrice));
     }
 
-    public int OrderCount => _orders.Count;
+    public IReadOnlyList<CartItem> GetItems() => _items.AsReadOnly();
 
-    public Order GetOrder(int index) => _orders[index];
+    public decimal GetTotal() => _items.Sum(item => item.Quantity * item.UnitPrice);
 
-    public List<Order> GetOrders() => _orders;
+    public bool IsEmpty => _items.Count == 0;
 }

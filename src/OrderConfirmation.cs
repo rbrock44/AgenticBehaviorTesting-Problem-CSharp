@@ -11,18 +11,4 @@
 
 namespace IndustrialLogic;
 
-public class Order
-{
-    public string OrderId { get; }
-    public string CustomerEmail { get; }
-    public IReadOnlyList<CartItem> Items { get; }
-    public decimal Total { get; }
-
-    public Order(string orderId, string customerEmail, IReadOnlyList<CartItem> items, decimal total)
-    {
-        OrderId = orderId;
-        CustomerEmail = customerEmail;
-        Items = items;
-        Total = total;
-    }
-}
+public record OrderConfirmation(string OrderId, decimal Total, string TransactionId);

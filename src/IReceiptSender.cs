@@ -11,10 +11,7 @@
 
 namespace IndustrialLogic;
 
-public enum ProductSize
+public interface IReceiptSender
 {
-    Small,
-    Medium,
-    Large,
-    NotApplicable
+    void Send(string email, string orderId, decimal total);
 }

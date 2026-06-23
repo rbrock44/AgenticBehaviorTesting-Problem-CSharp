@@ -11,19 +11,7 @@
 
 namespace IndustrialLogic;
 
-public static class DiscountCalculator
+public interface IInventoryService
 {
-    public static decimal ApplyDiscount(Product product)
-    {
-        var price = product.Price;
-        var discount = product.Discount;
-        if (discount <= 0) return price;
-        if (discount >= 1.0m) return 0;
-        return price * (1 - discount);
-    }
-
-    public static string FormatDiscount(decimal discount)
-    {
-        return $"{discount * 100:0}%";
-    }
+    void Reserve(IReadOnlyList<CartItem> items);
 }
