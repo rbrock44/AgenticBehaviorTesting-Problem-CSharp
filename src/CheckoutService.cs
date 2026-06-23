@@ -16,18 +16,18 @@ public class CheckoutService
     private readonly IInventoryService _inventory;
     private readonly IPaymentGateway _payment;
     private readonly IOrderRepository _repository;
-    private readonly IReceiptSender _receipts;
+    private readonly IOutbox _outbox;
 
     public CheckoutService(
         IInventoryService inventory,
         IPaymentGateway payment,
         IOrderRepository repository,
-        IReceiptSender receipts)
+        IOutbox outbox)
     {
         _inventory = inventory;
         _payment = payment;
         _repository = repository;
-        _receipts = receipts;
+        _outbox = outbox;
     }
 
     public OrderConfirmation PlaceOrder(Cart cart, Customer customer)
@@ -44,7 +44,7 @@ public class CheckoutService
         var order = new Order(Guid.NewGuid().ToString(), customer.Email, items, total);
         _repository.Save(order);
 
-        _receipts.Send(customer.Email, order.OrderId, order.Total);
+        _outbox.Append(new ReceiptRequested(Guid.NewGuid().ToString(), customer.Email, order.OrderId, order.Total));
 
         return new OrderConfirmation(order.OrderId, order.Total, transactionId);
     }

@@ -46,19 +46,6 @@ public class CheckoutServiceTests
         public bool IsEmpty => _store.Count == 0;
     }
 
-    private record DeliveredReceipt(string Email, string OrderId, decimal Total);
-
-    private class InMemoryReceiptSender : IReceiptSender
-    {
-        private readonly List<DeliveredReceipt> _inbox = new();
-
-        public void Send(string email, string orderId, decimal total) =>
-            _inbox.Add(new DeliveredReceipt(email, orderId, total));
-
-        public IReadOnlyList<DeliveredReceipt> InboxFor(string email) =>
-            _inbox.Where(r => r.Email == email).ToList();
-    }
-
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static Cart CartWith(string productId = "prod-1", int qty = 2, decimal price = 10.00m)
@@ -73,19 +60,19 @@ public class CheckoutServiceTests
     private static (
         CheckoutService service,
         InMemoryOrderRepository repository,
-        InMemoryReceiptSender receipts
+        Outbox outbox
     ) BuildWith(
         IInventoryService? inventory = null,
         IPaymentGateway? payment = null)
     {
         var repository = new InMemoryOrderRepository();
-        var receipts = new InMemoryReceiptSender();
+        var outbox = new Outbox();
         var service = new CheckoutService(
             inventory ?? new InMemoryInventory(),
             payment   ?? new InMemoryPaymentGateway(),
             repository,
-            receipts);
-        return (service, repository, receipts);
+            outbox);
+        return (service, repository, outbox);
     }
 
     // ── Successful checkout ───────────────────────────────────────────────────
@@ -167,33 +154,34 @@ public class CheckoutServiceTests
     }
 
     [Fact]
-    public void PlaceOrder_ReceiptIsDeliveredToCustomerEmail()
+    public void PlaceOrder_OutboxContainsReceiptRequestedEventForCustomer()
     {
-        var (service, _, receipts) = BuildWith();
+        var (service, _, outbox) = BuildWith();
 
         service.PlaceOrder(CartWith(qty: 1, price: 50.00m), Alice());
 
-        Assert.Single(receipts.InboxFor("alice@example.com"));
+        Assert.Single(outbox.GetPending());
+        Assert.Equal("alice@example.com", outbox.GetPending()[0].Email);
     }
 
     [Fact]
-    public void PlaceOrder_DeliveredReceiptTotalMatchesCartTotal()
+    public void PlaceOrder_OutboxEventTotalMatchesCartTotal()
     {
-        var (service, _, receipts) = BuildWith();
+        var (service, _, outbox) = BuildWith();
 
         service.PlaceOrder(CartWith(qty: 1, price: 50.00m), Alice());
 
-        Assert.Equal(50.00m, receipts.InboxFor("alice@example.com")[0].Total);
+        Assert.Equal(50.00m, outbox.GetPending()[0].Total);
     }
 
     [Fact]
-    public void PlaceOrder_DeliveredReceiptOrderIdMatchesConfirmation()
+    public void PlaceOrder_OutboxEventOrderIdMatchesConfirmation()
     {
-        var (service, _, receipts) = BuildWith();
+        var (service, _, outbox) = BuildWith();
 
         var confirmation = service.PlaceOrder(CartWith(), Alice());
 
-        Assert.Equal(confirmation.OrderId, receipts.InboxFor("alice@example.com")[0].OrderId);
+        Assert.Equal(confirmation.OrderId, outbox.GetPending()[0].OrderId);
     }
 
     // ── Empty cart ────────────────────────────────────────────────────────────
@@ -249,13 +237,13 @@ public class CheckoutServiceTests
     }
 
     [Fact]
-    public void PlaceOrder_PaymentFails_NoReceiptDelivered()
+    public void PlaceOrder_PaymentFails_NoOutboxEventQueued()
     {
-        var (service, _, receipts) = BuildWith(payment: new InMemoryPaymentGateway(toThrow: new Exception("Declined")));
+        var (service, _, outbox) = BuildWith(payment: new InMemoryPaymentGateway(toThrow: new Exception("Declined")));
 
         try { service.PlaceOrder(CartWith(), Alice()); } catch { }
 
-        Assert.Empty(receipts.InboxFor("alice@example.com"));
+        Assert.Empty(outbox.GetPending());
     }
 
     // ── Inventory failure ─────────────────────────────────────────────────────
@@ -279,12 +267,13 @@ public class CheckoutServiceTests
     }
 
     [Fact]
-    public void PlaceOrder_InventoryFails_NoReceiptDelivered()
+    public void PlaceOrder_InventoryFails_NoOutboxEventQueued()
     {
-        var (service, _, receipts) = BuildWith(inventory: new InMemoryInventory(toThrow: new Exception("Out of stock")));
+        var (service, _, outbox) = BuildWith(inventory: new InMemoryInventory(toThrow: new Exception("Out of stock")));
 
         try { service.PlaceOrder(CartWith(), Alice()); } catch { }
 
-        Assert.Empty(receipts.InboxFor("alice@example.com"));
+        Assert.Empty(outbox.GetPending());
     }
 }
+
