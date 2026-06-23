@@ -1,0 +1,8 @@
+root = true
+
+[*.cs]
+# Unnecessary using directives
+dotnet_diagnostic.IDE0005.severity = warning
+
+# Member does not access instance data — can be static
+dotnet_diagnostic.CA1822.severity = warning
