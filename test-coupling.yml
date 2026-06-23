@@ -1,0 +1,63 @@
+rules:
+  - id: mock-framework-creation
+    message: >
+      Test uses a mock framework object (Moq/NSubstitute/FakeItEasy).
+      Prefer hand-written fakes or stubs to avoid coupling tests to interaction details.
+    severity: ERROR
+    languages: [csharp]
+    patterns:
+      - pattern-either:
+          - pattern: new Mock<$T>(...)
+          - pattern: Substitute.For<$T>(...)
+          - pattern: Substitute.ForPartsOf<$T>(...)
+          - pattern: A.Fake<$T>(...)
+          - pattern: A.Dummy<$T>(...)
+    paths:
+      include:
+        - "**/tests/**"
+        - "**/*Tests.cs"
+        - "**/*Test.cs"
+        - "**/*Spec.cs"
+
+  - id: call-verification-assertion
+    message: >
+      Test verifies how a method was called (interaction testing).
+      Assert on observable outputs and state instead of on call counts or argument capture.
+    severity: ERROR
+    languages: [csharp]
+    patterns:
+      - pattern-either:
+          - pattern: $X.Verify(...)
+          - pattern: $X.VerifyAll()
+          - pattern: $X.VerifyNoOtherCalls()
+          - pattern: $X.Received(...)
+          - pattern: $X.DidNotReceive(...)
+          - pattern: $X.ReceivedWithAnyArgs(...)
+          - pattern: $X.DidNotReceiveWithAnyArgs(...)
+          - pattern: A.CallTo(...).MustHaveHappened(...)
+          - pattern: A.CallTo(...).MustNotHaveHappened(...)
+          - pattern: A.CallTo(...).MustHaveHappenedOnceExactly()
+    paths:
+      include:
+        - "**/tests/**"
+        - "**/*Tests.cs"
+        - "**/*Test.cs"
+        - "**/*Spec.cs"
+
+  - id: spy-argument-capture
+    message: >
+      Test captures arguments via a spy (interaction testing).
+      Assert on the actual output or saved state rather than what arguments were passed.
+    severity: ERROR
+    languages: [csharp]
+    patterns:
+      - pattern-either:
+          - pattern: new Capture<$T>(...)
+          - pattern: $X.Invocations
+          - pattern: $X.SetupSequence(...)
+    paths:
+      include:
+        - "**/tests/**"
+        - "**/*Tests.cs"
+        - "**/*Test.cs"
+        - "**/*Spec.cs"
